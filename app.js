@@ -17,10 +17,11 @@ app.post('/', async function (req, res) {
   //let rawdata = req.body["rawdata"]; // ID of raw data to use in the off-chain schema (optional)
 
   // TODO - как конвертировать ID 3д-модели из запроса в ID, который вставляется в url в off-chain schema
-   
-  // TODO - validate input values
-
-  var mintedNft = await minter.mintNFT(imageURL, user);
+  try {
+    var mintedNft = await minter.mintNFT(imageURL, user);
+  } catch (err) {
+    res.status(500).send({"ERROR" : err});
+  }
 
   res.status(201).send(mintedNft);
 })
