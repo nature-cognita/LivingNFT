@@ -1,99 +1,45 @@
 // We create collection only once for a single Unit and then just mint NFTs (via mint.js) in this collection
+const { UniqueHelper } = require('./src/lib/unique');
+const { Logger } = require('./src/lib/logger');
+const config = require('./__env.dev');
+const { schema } = require('./schema.data');
+const COLLECTION_NAME = `Living NFTs by Nature Cognita test`;
+const COLLECTION_DESCRIPTION = `Digital art created by Nature, digitally pollinated by humans`;
+const COLLECTION_TOKEN_PREFIX = `COGN`;
 
-const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api');
-const config = require('./config');
-const fs = require('fs');
 
-function strToUTF16(str) {
-  let buf = [];
-  for (let i=0, strLen=str.length; i < strLen; i++) {
-    buf.push(str.charCodeAt(i));
-  }
-  return buf;
-}
-
-function getCreatedCollectionId(events) {
-  let success = false;
-  let collectionId = 0;
-  events.forEach(({ phase, event: { data, method, section } }) => {
-    // console.log(`    ${phase}: ${section}.${method}:: ${data}`);
-    if (method == 'ExtrinsicSuccess') {
-      success = true;
-    } else if ((section == 'nft')  && (method == 'CollectionCreated')) {
-      collectionId = parseInt(data[0].toString());
-    }
-  });
-  return collectionId;
-}
-
-function submitTransaction(sender, transaction) {
-  return new Promise(async function(resolve, reject) {
-    try {
-      const unsub = await transaction
-      .signAndSend(sender, (result) => {
-        console.log(`Current tx status is ${result.status}`);
-    
-        if (result.status.isInBlock) {
-          console.log(`Transaction included at blockHash ${result.status.asInBlock}`);
-        } else if (result.status.isFinalized) {
-          console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
-          let id = getCreatedCollectionId(result.events);
-          resolve(id);
-          unsub();
-        }
-      });
-    }
-    catch (e) {
-      reject(e.toString());
-    }
-  });
-}
-
-async function createCollectionAsync(api, signer) {
-  const name = "LivingNFT";
-  const description = "LivingNFT test collection";
-  const tokenPrefix = "TMP";
-  const modeprm = {nft: null};
-
-  const tx = api.tx.nft.createCollection(strToUTF16(name), strToUTF16(description), strToUTF16(tokenPrefix), modeprm);
-  return await submitTransaction(signer, tx);
-}
+// Create NFT collection
 
 async function main() {
-  // Initialise the provider to connect to the node
-  const wsProvider = new WsProvider(config.wsEndpoint);
-  const rtt = JSON.parse(fs.readFileSync("./runtime_types.json"));
+  
+  // 1. Initialise the provider to connect to the node
+  let uniqueHelper = new UniqueHelper(new Logger());
+  await uniqueHelper.connect(config.wsEndpoint);
 
-  // Create the API and wait until ready
-  const api = await ApiPromise.create({ 
-    provider: wsProvider,
-    types: rtt
-  });
-
-  // Owners's keypair
-  const keyring = new Keyring({ type: 'sr25519' });
-  const owner = keyring.addFromUri(config.ownerSeed);
+  // 2. Receive Owners's keypair from the .env file to sign transactions
+  let owner = uniqueHelper.util.fromSeed(config.ownerSeed);
   console.log("Collection owner address: ", owner.address);
 
-  // Create collection as owner
-  console.log("=== Create collection ===");
-  const collectionId = await createCollectionAsync(api, owner);
+  // 3. Configure collection options 
+  const constOnChainSchema = schema;
+  const offchainSchema = `http://localhost:8080/ipfs/QmWB5Qmd2MtMLzzCmH4rKyDfSxPLGcEVt7ERiBdT6YQVh7/nft_image_{id}.png`;
+
+  const collectionOptions = {
+    name: COLLECTION_NAME, 
+    description: COLLECTION_DESCRIPTION, 
+    tokenPrefix: COLLECTION_TOKEN_PREFIX,
+    offchainSchema,
+    schemaVersion: "ImageURL",
+    constOnChainSchema,
+    limits: {
+      sponsorTransferTimeout: 0,
+      sponsorApproveTimeout: 0,
+    },
+    metaUpdatePermission: "Admin"
+  };
+
+  const {collectionId} = await uniqueHelper.mintNFTCollection(owner, collectionOptions);
   console.log(`Collection created: ${collectionId}`);
-
-  // Set onchain schema
-  console.log("=== Set const on-chain schema ===");
-  const schema = (fs.readFileSync(`${config.outputFolder}/${config.outputSchema}`)).toString();
-  const tx4 = api.tx.nft.setConstOnChainSchema(collectionId, strToUTF16(schema));
-  await submitTransaction(owner, tx4);
-
-  // Set offchain schema
-  console.log("=== Set schema version ===");
-  const tx2 = api.tx.nft.setSchemaVersion(collectionId, 'ImageURL');
-  await submitTransaction(owner, tx2);
-
-  console.log("=== Set offchain schema ===");
-  const tx3 = api.tx.nft.setOffchainSchema(collectionId, `http://localhost:8080/ipfs/QmWB5Qmd2MtMLzzCmH4rKyDfSxPLGcEVt7ERiBdT6YQVh7/nft_image_{id}.png`);
-  await submitTransaction(owner, tx3);
 }
 
 main().catch(console.error).finally(() => process.exit());
