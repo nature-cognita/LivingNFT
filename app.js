@@ -10,18 +10,21 @@ app.use(express.urlencoded({ extended: false }));
 app.post('/', async function (req, res) {
   console.log(req.body);
 
-  
-  // let owner = req.body["owner"]; // Unit's public key + seed phrase. TODO — send Owner's seed phrase via .env file
-  let user = req.body["user"]; // User's public key or None (if a Unit sends data by itself)
-  let imageURL = req.body["imageURL"]; // ID of a 3D-model to use in the off-chain schema
-  //let rawdata = req.body["rawdata"]; // ID of raw data to use in the off-chain schema (optional)
+    let user = req.body["user"]; // User's public key or None (if a Unit sends data by itself)
+    let imageURL = req.body["imageURL"]; // ID of a 3D-model to use in the off-chain schema
 
-  // TODO - как конвертировать ID 3д-модели из запроса в ID, который вставляется в url в off-chain schema
+    // Image ID from imageURL will be parsed and compared with a token ID in the mintNFT script
+
   try {
     var mintedNft = await minter.mintNFT(imageURL, user);
   } catch (err) {
-    res.status(500).send({"ERROR" : err});
+    res.status(500).send({"ERROR" : err}); // if Image ID and token ID do not match
   }
+  // returns: 
+    //  collectionId
+    //  collectionOwner
+    //  tokenId
+    //  tokenOwner
 
   res.status(201).send(mintedNft);
 })
@@ -31,7 +34,7 @@ app.get('/', (req, res) => {
 })
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+  console.log(`LivingNFT app is listening on port ${port}`)
 })
 
 module.exports = app;
