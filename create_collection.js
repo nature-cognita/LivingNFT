@@ -4,7 +4,7 @@ const { Logger } = require('./src/lib/logger');
 const config = require('./__env.dev');
 const { schema } = require('./schema.data');
 const COLLECTION_NAME = `Living NFTs by Nature Cognita test`;
-const COLLECTION_DESCRIPTION = `Digital art created by Nature, digitally pollinated by humans`;
+const COLLECTION_DESCRIPTION = `Digital art created by Nature digitally pollinated by humans`;
 const COLLECTION_TOKEN_PREFIX = `COGN`;
 
 

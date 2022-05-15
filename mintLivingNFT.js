@@ -80,6 +80,7 @@ async function mintNFT(imageURL, user) {
     // 4. Check Owner's account balance
     await checkBalance(uniqueHelper, unitNC);
 
+    // To refill the balance automatically on the test network:
     // try {
     //   await checkBalance(uniqueHelper, unitNC)
     // } catch (err) {
