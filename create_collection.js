@@ -1,10 +1,10 @@
-// We create collection only once for a single Unit and then just mint NFTs (via mint.js) in this collection
+// We create collection only once for a single Unit and then just mint NFTs (via mintLivingNFT.js) in this collection
 const { UniqueHelper } = require('./src/lib/unique');
 const { Logger } = require('./src/lib/logger');
 const config = require('./__env.dev');
 const { schema } = require('./schema.data');
-const COLLECTION_NAME = `Living NFTs by Nature Cognita test`;
-const COLLECTION_DESCRIPTION = `Digital art created by Nature digitally pollinated by humans`;
+const COLLECTION_NAME = `Living NFTs by Nature Cognita x SNI`;
+const COLLECTION_DESCRIPTION = `Digital art created by nature. Living plants generate electricity and power environmental sensors. Each new portion of sensing data is transformed into a generative art that represents the life of the plants and thus can change | learn more at cognita.dev`;
 const COLLECTION_TOKEN_PREFIX = `COGN`;
 
 
@@ -22,7 +22,7 @@ async function main() {
 
   // 3. Configure collection options 
   const constOnChainSchema = schema;
-  const offchainSchema = `http://localhost:8080/ipfs/QmWB5Qmd2MtMLzzCmH4rKyDfSxPLGcEVt7ERiBdT6YQVh7/nft_image_{id}.png`;
+  const offchainSchema = `https://cognita-dev.s3.amazonaws.com/outputs/living_nft_{id}.png`; // Each minted token in the collection will refer to an image with the corresponding id
 
   const collectionOptions = {
     name: COLLECTION_NAME, 
