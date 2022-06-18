@@ -1,2 +1,3 @@
 node_modules/*
 __env.dev.js
+.env

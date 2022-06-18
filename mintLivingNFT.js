@@ -1,7 +1,10 @@
 const { UniqueHelper } = require('./src/lib/unique');
 const { Logger } = require('./src/lib/logger');
 const { UniqueSchemaHelper } = require('./src/lib/unique');
-const config = require('./__env.dev');
+
+require("dotenv").config(); // use .env
+
+//const config = require('./__env.dev');
 const { schemaObject, schema } = require('./schema.data');
 
 const checkBalance = async (uniqueHelper, signer) => {
@@ -62,18 +65,23 @@ async function mintNFT(imageURL, user) {
 
     // 1. Initialize the provider to connect to the node
     let uniqueHelper = new UniqueHelper(new Logger());
-    await uniqueHelper.connect(config.wsEndpoint);
+    // await uniqueHelper.connect(config.wsEndpoint);
+    await uniqueHelper.connect(process.env.WS_ENDPOINT); // via .env
+
 
     // 2. Receive Owners's keypair from the .env file to sign transactions
-    let unitNC = uniqueHelper.util.fromSeed(config.ownerSeed);
+    //let unitNC = uniqueHelper.util.fromSeed(config.ownerSeed);
+    let unitNC = uniqueHelper.util.fromSeed(process.env.OWNER_SEED); // via .env
     console.log("Collection owner address: ", unitNC.address);
 
     // 3. Check if the imageURL ID corresponds to the ID of the token we're about to mint 
-    let collectionId = config.collectionId;
+    // let collectionId = config.collectionId;
+    let collectionId = process.env.COLLECTION_ID; // via .env
     let lastTokenId = await uniqueHelper.getCollectionLastTokenId(collectionId);
     let imageId = parseImageURL(imageURL);
     console.log(`imageId=${imageId}, lasttokenid=${lastTokenId}`);
     if (lastTokenId !== imageId - 1) {
+      console.log(`IDs of the image and token DO NOT match. Image ID should be changed to ${lastTokenId + 1}`);
       throw `IDs of the image and token DO NOT match. Image ID should be changed to ${lastTokenId + 1}`;
     }
 
